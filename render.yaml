@@ -1,9 +1,0 @@
-
-services:
-  - type: web
-    name: heatwave-api
-    env: python
-    plan: free
-    region: oregon  # choose nearest region
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT

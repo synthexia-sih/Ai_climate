@@ -14,3 +14,11 @@ numpy
 scikit-learn
 lightgbm
 joblib
+flask
+flask-cors
+joblib
+numpy
+pandas
+scikit-learn
+lightgbm
+
