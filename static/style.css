@@ -20,6 +20,7 @@ body {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 20px;
   box-shadow: 0 4px 30px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn {
@@ -27,8 +28,140 @@ body {
   color: white;
   font-weight: 600;
   transition: 0.3s ease;
+  border: none;
+  cursor: pointer;
 }
+
 .btn:hover {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(240, 74, 0, 0.5);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+#map {
+  height: 400px;
+  width: 100%;
+  border-radius: 15px;
+  margin-top: 20px;
+  z-index: 0;
+}
+
+/* Loading animation */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Risk level colors */
+.risk-extreme {
+  background-color: #dc2626;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.risk-high {
+  background-color: #ea580c;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.risk-moderate {
+  background-color: #eab308;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.risk-low {
+  background-color: #16a34a;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.risk-very-low {
+  background-color: #6b7280;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Table styling */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .glass {
+    margin: 10px;
+    padding: 20px;
+  }
+  
+  #map {
+    height: 300px;
+  }
+  
+  .flex-wrap {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .flex-wrap > div {
+    margin-bottom: 15px;
+  }
+}
+
+/* Error styling */
+.error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 10px 0;
 }

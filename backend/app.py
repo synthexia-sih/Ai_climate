@@ -1,218 +1,195 @@
-# from flask import Flask, request, jsonify, render_template
-# from flask_cors import CORS
-# import joblib
-# import pandas as pd
-# import numpy as np
-# from datetime import datetime, timedelta
-
-# # -------------------------------
-# # Flask + CORS Setup
-# # -------------------------------
-# app = Flask(__name__)
-# CORS(app)
-
-# # -------------------------------
-# # Load model and feature list
-# # -------------------------------
-# calibrated_clf = joblib.load("calibrated_clf.joblib")
-# feat_cols = joblib.load("feat_cols.joblib")
-
-# # -------------------------------
-# # Routes
-# # -------------------------------
-# @app.route("/")
-# def index():
-#     return render_template("index.html")
-
-# @app.route("/predict", methods=["POST"])
-# def predict():
-#     try:
-#         data = request.get_json()
-#         city = data.get("city", "Delhi")
-#         start_date = data.get("start_date", None)
-#         days = int(data.get("days", 7))
-
-#         today = datetime.today() if not start_date else datetime.strptime(start_date, "%Y-%m-%d")
-#         future_dates = pd.date_range(start=today + timedelta(days=1), periods=days)
-
-#         # Generate simple synthetic input (normally from NASA data)
-#         np.random.seed(42)
-#         X_future = pd.DataFrame({'DATE': future_dates})
-#         for col in feat_cols:
-#             if "T2M_MAX" in col:
-#                 X_future[col] = np.random.normal(38, 3, size=days)
-#             elif "T2M_MIN" in col:
-#                 X_future[col] = np.random.normal(26, 2, size=days)
-#             elif "RH2M" in col:
-#                 X_future[col] = np.random.normal(45, 10, size=days)
-#             elif "WS10M" in col:
-#                 X_future[col] = np.random.normal(2, 0.5, size=days)
-#             elif "ALLSKY_SFC_SW_DWN" in col:
-#                 X_future[col] = np.random.normal(20, 5, size=days)
-#             elif "PRECTOTCORR" in col:
-#                 X_future[col] = np.random.normal(0.1, 0.05, size=days)
-#             elif "Heat_Index" in col:
-#                 X_future[col] = np.random.normal(40, 2, size=days)
-#             else:
-#                 X_future[col] = np.random.normal(0, 1, size=days)
-
-#         # Reorder
-#         for col in feat_cols:
-#             if col not in X_future.columns:
-#                 X_future[col] = 0
-#         X_future = X_future[feat_cols]
-
-#         # Predict
-#         y_future_prob = calibrated_clf.predict_proba(X_future)[:, 1]
-#         y_future_prob = pd.Series(y_future_prob).rolling(window=3, center=True, min_periods=1).mean().values
-#         y_future_prob = 0.05 + 0.9 * y_future_prob
-#         y_future_pred = (y_future_prob > 0.5).astype(int)
-
-#         # Risk category
-#         risk_levels = []
-#         for prob in y_future_prob:
-#             if prob > 0.8:
-#                 risk_levels.append("Extreme Risk")
-#             elif 0.6 < prob <= 0.8:
-#                 risk_levels.append("High Risk")
-#             elif 0.4 < prob <= 0.6:
-#                 risk_levels.append("Moderate Risk")
-#             else:
-#                 risk_levels.append("Low Risk")
-
-#         # Prepare results
-#         result_df = pd.DataFrame({
-#             "DATE": future_dates.strftime("%Y-%m-%d"),
-#             "Heatwave_Prob": y_future_prob,
-#             "Heatwave_Pred": y_future_pred,
-#             "Risk_Level": risk_levels
-#         })
-
-#         return jsonify({
-#             "city": city,
-#             "results": result_df.to_dict(orient="records")
-#         })
-
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", port=5000)
-# from fastapi import FastAPI, HTTPException
-# from pydantic import BaseModel
-# import joblib
-# import numpy as np
-# from fastapi.middleware.cors import CORSMiddleware
-
-# # Load saved model and features
-# model = joblib.load("models/calibrated_clf.joblib")
-# feat_cols = joblib.load("models/feat_cols.joblib")
-
-# app = FastAPI(title="Heatwave Predictor API")
-
-# # Allow frontend origin for CORS
-# origins = ["*"]  # For production, replace "*" with your frontend domain
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_methods=["*"],
-#     allow_headers=["*"]
-# )
-
-# # Input schema
-# class PredictRequest(BaseModel):
-#     features: dict  # e.g., {"T2M_MAX":36.5, "RH2M":55.2, ...}
-
-# @app.post("/predict")
-# def predict(req: PredictRequest):
-#     # Validate keys
-#     missing = [col for col in feat_cols if col not in req.features]
-#     if missing:
-#         raise HTTPException(status_code=400, detail=f"Missing features: {missing}")
-
-#     # Create feature vector
-#     x = np.array([req.features[col] for col in feat_cols]).reshape(1, -1)
-#     prob = float(model.predict_proba(x)[:,1][0])
-#     pred = int(prob > 0.5)
-
-#     # Risk categorization
-#     if prob > 0.8:
-#         risk = "Extreme Risk"
-#     elif prob > 0.6:
-#         risk = "High Risk"
-#     elif prob > 0.4:
-#         risk = "Moderate Risk"
-#     else:
-#         risk = "Low Risk"
-
-#     return {"probability": prob, "prediction": pred, "risk_level": risk}
-
-
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-import joblib
-import numpy as np
+import os
 from datetime import datetime, timedelta
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+import pandas as pd
+import numpy as np
+import joblib
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
-# -----------------------
-# Load ML model
-# -----------------------
-model = joblib.load("calibrated_clf.joblib")
-feat_cols = joblib.load("feat_cols.joblib")
+# Load ML model and feature columns
+try:
+    clf = joblib.load('calibrated_clf.joblib')
+    feat_cols = joblib.load('feat_cols.joblib')
+    print("✅ ML Model loaded successfully")
+    print(f"📊 Features expected: {len(feat_cols)}")
+except Exception as e:
+    print(f"❌ Error loading model: {e}")
+    clf = None
+    feat_cols = None
 
-# -----------------------
-# Routes
-# -----------------------
+# City coordinates for reference
+CITIES = {
+    "Delhi": {"lat": 28.6139, "lon": 77.2090},
+    "Mumbai": {"lat": 19.0760, "lon": 72.8777},
+    "Kolkata": {"lat": 22.5726, "lon": 88.3639},
+    "Chennai": {"lat": 13.0827, "lon": 80.2707},
+    "Bengaluru": {"lat": 12.9716, "lon": 77.5946},
+    "Bangalore": {"lat": 12.9716, "lon": 77.5946},
+    "Chandigarh": {"lat": 30.7333, "lon": 76.7794}
+}
+
+def create_features(df):
+    """Create time-based and lag features for the model"""
+    df['DATE'] = pd.to_datetime(df['DATE'])
+    
+    # Time-based features
+    df['Month'] = df['DATE'].dt.month
+    df['Day'] = df['DATE'].dt.day
+    df['DayOfYear'] = df['DATE'].dt.dayofyear
+    df['Year'] = df['DATE'].dt.year
+    
+    # Seasonal features (cyclical encoding)
+    df['sin_day'] = np.sin(2 * np.pi * df['DayOfYear'] / 365.25)
+    df['cos_day'] = np.cos(2 * np.pi * df['DayOfYear'] / 365.25)
+    
+    # Add lag features (using mean historical values for prediction)
+    # In production, you'd want historical data from a database
+    df['TMAX_lag1'] = 35.0  # Default summer temperature
+    df['TMAX_lag7'] = 34.5
+    df['TMAX_lag14'] = 34.0
+    
+    return df
+
+def predict_heatwave(city, start_date, days):
+    """Make heatwave predictions for given city and date range"""
+    if clf is None or feat_cols is None:
+        return {"error": "Model not loaded. Check if calibrated_clf.joblib and feat_cols.joblib exist."}
+    
+    # Validate city
+    if city not in CITIES:
+        return {"error": f"City '{city}' not found. Available cities: {', '.join(CITIES.keys())}"}
+    
+    # Parse start date or use today
+    if start_date:
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            start = datetime.now()
+    else:
+        start = datetime.now()
+    
+    # Generate date range
+    try:
+        days = int(days)
+        if days < 1 or days > 15:
+            days = 7
+    except:
+        days = 7
+    
+    dates = [start + timedelta(days=i) for i in range(days)]
+    
+    # Create DataFrame with dates
+    df = pd.DataFrame({'DATE': dates})
+    
+    # Add city info
+    df['CITY'] = city
+    
+    # Create features
+    df = create_features(df)
+    
+    # Add base temperature estimate (seasonal)
+    # This is a simple model - in production you'd query actual weather data
+    month_temps = {
+        1: 20, 2: 23, 3: 28, 4: 35, 5: 40, 6: 38,
+        7: 35, 8: 33, 9: 33, 10: 30, 11: 25, 12: 21
+    }
+    df['TMAX'] = df['Month'].map(month_temps)
+    
+    # Adjust for city (some cities are hotter)
+    city_adjustments = {
+        "Delhi": 2, "Mumbai": -1, "Kolkata": 1,
+        "Chennai": 0, "Bengaluru": -3, "Bangalore": -3, "Chandigarh": 1
+    }
+    df['TMAX'] += city_adjustments.get(city, 0)
+    
+    # Ensure all required features are present
+    for col in feat_cols:
+        if col not in df.columns:
+            df[col] = 0
+    
+    # Select features in correct order
+    try:
+        X = df[feat_cols]
+    except KeyError as e:
+        return {"error": f"Missing feature: {str(e)}. Check your model's feature requirements."}
+    
+    # Make predictions
+    try:
+        probs = clf.predict_proba(X)[:, 1]
+        preds = clf.predict(X)
+    except Exception as e:
+        return {"error": f"Prediction failed: {str(e)}"}
+    
+    # Create results
+    results = []
+    for i, date in enumerate(dates):
+        prob = float(probs[i])
+        pred = int(preds[i])
+        
+        # Determine risk level
+        if prob >= 0.8:
+            risk = "🔴 Extreme"
+        elif prob >= 0.6:
+            risk = "🟠 High"
+        elif prob >= 0.4:
+            risk = "🟡 Moderate"
+        elif prob >= 0.2:
+            risk = "🟢 Low"
+        else:
+            risk = "⚪ Very Low"
+        
+        results.append({
+            "DATE": date.strftime("%Y-%m-%d"),
+            "Heatwave_Prob": round(prob, 3),
+            "Heatwave_Pred": pred,
+            "Risk_Level": risk
+        })
+    
+    return {
+        "city": city,
+        "start_date": start.strftime("%Y-%m-%d"),
+        "days": days,
+        "results": results
+    }
+
 @app.route("/")
 def index():
+    """Serve the main page"""
     return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    data = request.get_json()
-    city = data.get("city")
-    start_date = data.get("start_date")
-    days = int(data.get("days", 7))
+    """Handle prediction requests"""
+    try:
+        data = request.get_json()
+        city = data.get("city", "Delhi")
+        start_date = data.get("start_date", "")
+        days = data.get("days", 7)
+        
+        result = predict_heatwave(city, start_date, days)
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    if not city:
-        return jsonify({"error": "City is required"}), 400
+@app.route("/health")
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "model_loaded": clf is not None,
+        "features_count": len(feat_cols) if feat_cols else 0
+    })
 
-    # -----------------------
-    # Feature preprocessing placeholder
-    # Replace with your actual feature creation logic
-    # -----------------------
-    X_future = np.random.rand(days, len(feat_cols))
-    y_future_prob = model.predict_proba(X_future)[:,1]
-    y_future_pred = (y_future_prob > 0.5).astype(int)
+@app.route("/cities")
+def get_cities():
+    """Get available cities"""
+    return jsonify(list(CITIES.keys()))
 
-    # -----------------------
-    # Risk classification
-    # -----------------------
-    risk_levels = []
-    for p in y_future_prob:
-        if p > 0.8: risk_levels.append("Extreme Risk")
-        elif p > 0.6: risk_levels.append("High Risk")
-        elif p > 0.4: risk_levels.append("Moderate Risk")
-        else: risk_levels.append("Low Risk")
-
-    start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else datetime.today()
-    results = []
-    for i in range(days):
-        results.append({
-            "DATE": (start_dt + timedelta(days=i)).strftime("%Y-%m-%d"),
-            "Heatwave_Prob": float(y_future_prob[i]),
-            "Heatwave_Pred": int(y_future_pred[i]),
-            "Risk_Level": risk_levels[i]
-        })
-
-    return jsonify({"city": city, "results": results})
-
-# -----------------------
-# Run server
-# -----------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"🚀 Starting Flask server on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=True)

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>☀️ AI Heatwave Forecast - India Only</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-start pt-12">
+
+  <h1 class="text-4xl font-extrabold text-gray-800 flex items-center gap-2">
+    ☀️ AI Heatwave Forecast - India
+  </h1>
+  <p class="text-gray-700 mt-2 mb-8">15-Year NASA Data • Seasonal + Lags • Threshold: 40°C</p>
+
+  <div class="glass p-6 w-11/12 md:w-3/4 lg:w-2/3 flex flex-wrap gap-4 justify-center items-center">
+    <div>
+      <label class="block font-semibold mb-1">Select City</label>
+      <select id="city" onchange="highlightCity()" class="p-2 border rounded-md w-48">
+        <option>Delhi</option>
+        <option>Mumbai</option>
+        <option>Kolkata</option>
+        <option>Chennai</option>
+        <option>Bengaluru</option>
+        <option>Chandigarh</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1">Start Date (Optional)</label>
+      <input id="startDate" type="date" class="p-2 border rounded-md w-48" />
+    </div>
+
+    <div>
+      <label class="block font-semibold mb-1">Days</label>
+      <input id="days" type="number" value="7" min="1" max="15" class="p-2 border rounded-md w-32" />
+    </div>
+
+    <button onclick="predict()" class="btn px-6 py-2 rounded-md flex items-center gap-2">
+      📈 Predict
+    </button>
+  </div>
+
+  <!-- Map -->
+  <div id="map" class="glass w-11/12 md:w-3/4 lg:w-2/3"></div>
+
+  <div id="output" class="glass p-8 mt-8 w-11/12 md:w-3/4 lg:w-2/3 text-center text-gray-700">
+    <p class="text-lg" id="status">Ready to Predict Heatwaves 🌡️<br>Choose city, date & click Predict.</p>
+  </div>
+
+  <!-- Results Table -->
+  <div id="results" class="glass p-8 mt-8 w-11/12 md:w-3/4 lg:w-2/3 hidden">
+    <h2 class="text-2xl font-bold mb-4 text-center">📊 Prediction Results</h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white rounded-lg shadow">
+        <thead class="bg-orange-100">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Probability</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prediction</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody" class="bg-white divide-y divide-gray-200">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
