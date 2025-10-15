@@ -27,7 +27,6 @@ CITIES = {
     "Kolkata": {"lat": 22.5726, "lon": 88.3639},
     "Chennai": {"lat": 13.0827, "lon": 80.2707},
     "Bengaluru": {"lat": 12.9716, "lon": 77.5946},
-    "Bangalore": {"lat": 12.9716, "lon": 77.5946},
     "Chandigarh": {"lat": 30.7333, "lon": 76.7794}
 }
 
